@@ -1,0 +1,23 @@
+{
+  "extends": [
+    "airbnb",
+    "airbnb/hooks",
+    "airbnb-typescript",
+    "prettier",
+    "next/core-web-vitals"
+  ],
+  "plugins": ["prettier"],
+
+  "parserOptions": {
+    "project": "./emart-frontend/tsconfig.json"
+  },
+  "rules": {
+    "react/require-default-props": "off",
+    "prettier/prettier": [
+      "error",
+      {
+        "endOfLine": "auto"
+      }
+    ]
+  }
+}

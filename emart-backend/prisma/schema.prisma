@@ -1,0 +1,409 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Roles {
+  id        Int      @id @default(autoincrement())
+  title     String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @map("updated_at")
+  users     Users[]
+
+  @@map("roles")
+}
+
+model Address {
+  id         Int      @id @default(autoincrement())
+  country    String
+  city       String
+  zipcode    Int?
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @default(now()) @map("updated_at")
+  streetName String   @map("street_name")
+  userId     Int      @unique @map("user_id")
+  users      Users    @relation(fields: [userId], references: [id])
+  staffs     Staffs?
+  stores     Stores?
+
+  @@map("address")
+}
+
+model Users {
+  id           Int                  @id @default(autoincrement())
+  roleId       Int                  @map("role_id")
+  name         String
+  email        String               @unique
+  phone        String               @unique
+  password     String
+  createdAt    DateTime             @default(now()) @map("created_at")
+  updatedAt    DateTime             @default(now()) @map("updated_at")
+  status       Status               @default(Active)
+  managerId    Int?
+  address      Address?
+  banners      Banners[]
+  cart         Carts?
+  offers       Offers[]
+  orders       Orders[]
+  OTP          OTP?
+  resetTokens  PasswordResetToken[]
+  tokens       RefreshToken?
+  stores       Stores?
+  manager      Users?               @relation("ManagerToSubordinate", fields: [managerId], references: [id])
+  subordinates Users[]              @relation("ManagerToSubordinate")
+  roles        Roles                @relation(fields: [roleId], references: [id])
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  userId    Int      @unique
+  createdAt DateTime @default(now())
+  user      Users    @relation(fields: [userId], references: [id])
+
+  @@map("refresh_token")
+}
+
+model BlacklistedToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  createdAt DateTime @default(now())
+
+  @@map("blacklisted_token")
+}
+
+model Stores {
+  id              Int               @id @default(autoincrement())
+  userId          Int               @unique @map("user_id")
+  storeName       String            @map("store_name")
+  pan             String            @unique
+  addressId       Int               @unique @map("address_id")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @default(now()) @map("updated_at")
+  status          Status            @default(Active)
+  staffs          Staffs[]
+  address         Address           @relation(fields: [addressId], references: [id])
+  users           Users             @relation(fields: [userId], references: [id])
+  stores_Products Stores_Products[]
+
+  @@map("stores")
+}
+
+model Staffs {
+  id        Int      @id @default(autoincrement())
+  storeId   Int      @map("store_id")
+  name      String
+  addressId Int      @unique @map("address_id")
+  phone     String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @map("updated_at")
+  status    Status   @default(Active)
+  address   Address  @relation(fields: [addressId], references: [id])
+  stores    Stores   @relation(fields: [storeId], references: [id])
+
+  @@map("staffs")
+}
+
+model Products {
+  id                  Int                   @id @default(autoincrement())
+  createdAt           DateTime              @default(now()) @map("created_at")
+  updatedAt           DateTime              @default(now()) @map("updated_at")
+  carts_products      Carts_Products[]
+  categories_products Categories_Products[]
+  details             Details?
+  images              Images[]
+  offers_products     Offers_Products[]
+  order_items         Order_Items[]
+  product_banner      ProductBanner[]
+  stocks              Stocks[]
+  uom                 UOM?
+  stores_Products     Stores_Products[]
+
+  @@map("products")
+}
+
+model Details {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  productId   Int      @unique @map("product_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @map("updated_at")
+  price       Int
+  code        String   @unique
+  tags        String?
+  products    Products @relation(fields: [productId], references: [id])
+
+  @@map("details")
+}
+
+model Images {
+  id        Int      @id @default(autoincrement())
+  path      String
+  productId Int      @map("product_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @map("updated_at")
+  products  Products @relation(fields: [productId], references: [id])
+
+  @@map("images")
+}
+
+model Stocks {
+  id        Int      @id @default(autoincrement())
+  quantity  Int
+  productId Int      @map("product_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @map("updated_at")
+  products  Products @relation(fields: [productId], references: [id])
+
+  @@map("stocks")
+}
+
+model Stores_Products {
+  storeId   Int      @map("store_id")
+  productId Int      @map("product_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @map("updated_at")
+  store     Stores   @relation(fields: [storeId], references: [id])
+  product   Products @relation(fields: [productId], references: [id])
+
+  @@id([storeId, productId])
+  @@map("stores_products")
+}
+
+model Categories {
+  id                  Int                   @id @default(autoincrement())
+  name                String
+  createdAt           DateTime              @default(now()) @map("created_at")
+  updatedAt           DateTime              @default(now()) @map("updated_at")
+  status              Status
+  categories_products Categories_Products[]
+  category_banner     CategoryBanner[]
+
+  @@map("categories")
+}
+
+model Categories_Products {
+  productId  Int        @map("product_id")
+  categoryId Int        @map("category_id")
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @default(now()) @map("updated_at")
+  id         Int        @id @default(autoincrement())
+  category   Categories @relation(fields: [categoryId], references: [id])
+  product    Products   @relation(fields: [productId], references: [id])
+
+  @@map("categories_products")
+}
+
+model Carts {
+  id            Int              @id @default(autoincrement())
+  userId        Int              @unique @map("user_id")
+  createdAt     DateTime         @default(now()) @map("created_at")
+  updatedAt     DateTime         @default(now()) @map("updated_at")
+  users         Users            @relation(fields: [userId], references: [id])
+  carts_items   Carts_Products[]
+  order_address Order_Address[]
+
+  @@map("carts")
+}
+
+model Carts_Products {
+  productId Int      @map("product_id")
+  cartId    Int      @map("cart_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @map("updated_at")
+  quantity  Int
+  rate      Int
+  subTotal  Int      @default(0)
+  carts     Carts    @relation(fields: [cartId], references: [id])
+  product   Products @relation(fields: [productId], references: [id])
+
+  @@id([productId, cartId])
+  @@map("carts_products")
+}
+
+model Order_Address {
+  id         Int          @id @default(autoincrement())
+  cartId     Int          @map("cart_id")
+  fullName   String       @map("full_name")
+  country    String
+  city       String
+  streetName String       @map("street_name")
+  type       Address_Type @default(Shipping)
+  createdAt  DateTime     @default(now()) @map("created_at")
+  updatedAt  DateTime     @default(now()) @map("updated_at")
+  carts      Carts        @relation(fields: [cartId], references: [id])
+
+  @@map("order_address")
+}
+
+model Orders {
+  id             Int           @id @default(autoincrement())
+  userId         Int           @map("user_id")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @default(now()) @map("updated_at")
+  status         Order_Status  @default(Pending)
+  address        Json
+  total          Int
+  payment_status Pay_Status    @default(Pending)
+  comments       Comments?
+  order_items    Order_Items[]
+  users          Users         @relation(fields: [userId], references: [id])
+
+  @@map("orders")
+}
+
+model Order_Items {
+  productId Int      @map("product_id")
+  orderId   Int      @map("order_id")
+  quantity  Int
+  rate      Int
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @map("updated_at")
+  subTotal  Int
+  orders    Orders   @relation(fields: [orderId], references: [id])
+  product   Products @relation(fields: [productId], references: [id])
+
+  @@id([productId, orderId])
+  @@map("order_items")
+}
+
+model Comments {
+  id          Int      @id @default(autoincrement())
+  description String
+  orderId     Int      @unique
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @map("updated_at")
+  orders      Orders   @relation(fields: [orderId], references: [id])
+
+  @@map("comments")
+}
+
+model Banners {
+  id              Int              @id @default(autoincrement())
+  name            String
+  imageLink       String?
+  userId          Int
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @default(now()) @map("updated_at")
+  users           Users            @relation(fields: [userId], references: [id])
+  category_banner CategoryBanner[]
+  product_banner  ProductBanner[]
+
+  @@map("banners")
+}
+
+model ProductBanner {
+  productId Int      @map("product_id")
+  bannerId  Int      @map("banner_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @map("updated_at")
+  banner    Banners  @relation(fields: [bannerId], references: [id])
+  product   Products @relation(fields: [productId], references: [id])
+
+  @@id([productId, bannerId])
+  @@map("product_banner")
+}
+
+model CategoryBanner {
+  categoryId Int        @map("category_id")
+  bannerId   Int        @map("banner_id")
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @default(now()) @map("updated_at")
+  banner     Banners    @relation(fields: [bannerId], references: [id])
+  category   Categories @relation(fields: [categoryId], references: [id])
+
+  @@id([categoryId, bannerId])
+  @@map("category_banner")
+}
+
+model Offers {
+  id              Int               @id @default(autoincrement())
+  name            String
+  image           String?
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @default(now()) @map("updated_at")
+  usersId         Int               @map("user_id")
+  Users           Users             @relation(fields: [usersId], references: [id])
+  offers_products Offers_Products[]
+
+  @@map("offers")
+}
+
+model Offers_Products {
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @map("updated_at")
+  offerId   Int      @map("offer_id")
+  productId Int      @map("product_id")
+  offers    Offers   @relation(fields: [offerId], references: [id])
+  products  Products @relation(fields: [productId], references: [id])
+
+  @@id([productId, offerId])
+  @@map("offers_products")
+}
+
+model UOM {
+  id        Int      @id @default(autoincrement())
+  piece     Int?
+  carton    Int?
+  bora      Int?
+  kg        Int?
+  productId Int      @unique
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @map("updated_at")
+  products  Products @relation(fields: [productId], references: [id])
+
+  @@map("uom")
+}
+
+model PasswordResetToken {
+  id     Int      @id @default(autoincrement())
+  token  String   @unique
+  userId Int
+  expiry DateTime
+  used   Boolean  @default(false)
+  user   Users    @relation(fields: [userId], references: [id])
+
+  @@map("password_reset_token")
+}
+
+model OTP {
+  id              Int      @id @default(autoincrement())
+  userId          Int      @unique
+  otp             String
+  createdAt       DateTime @default(now()) @map("created_at")
+  expires_at      DateTime
+  failed_attempts Int      @default(0)
+  verified        Boolean  @default(false)
+  last_attempt    DateTime @default(now())
+  user            Users    @relation(fields: [userId], references: [id])
+
+  @@map("otp")
+}
+
+enum Order_Status {
+  Dispatched
+  Pending
+  Cancelled
+}
+
+enum Pay_Status {
+  Paid
+  Pending
+}
+
+enum Status {
+  Active
+  Inactive
+}
+
+enum Address_Type {
+  Shipping
+  Billing
+}
